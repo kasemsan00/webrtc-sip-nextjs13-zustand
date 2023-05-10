@@ -1,40 +1,53 @@
 "use client";
 
+import Sidebar from "@/ui/Layout/Sidebar";
+import MainView from "@/ui/Layout/MainView";
+import LocalVideo from "@/ui/Video/LocalVideo";
 import { useStore } from "@/store/useStore";
+import UserAgentHandler from "@/hook/userAgentHandler";
 import { useEffect, useState } from "react";
-import JSSIP from "jssip";
+import { getExtension } from "@/request/request";
+import CallOut from "@/ui/LeftBar/CallOut";
+import StatusConnection from "@/ui/LeftBar/StatusConnection";
+import ConnectSip from "@/ui/LeftBar/ConnectSip";
 
 export default function Home() {
-  const { userAgent, setUserAgent } = useStore((state) => state);
+  const { setProfile } = useStore((state) => state);
+  const [status, handleRegister, handleUnRegister] = UserAgentHandler();
+  const [isSettingOpen, setIsSettingOpen] = useState(false);
 
   useEffect(() => {
-    if (userAgent !== undefined) {
-      console.log(userAgent);
+    (async () => {
+      setProfile(await getExtension());
+    })();
+  }, [setProfile]);
+
+  useEffect(() => {
+    function handleEscapeKey(event: any) {
+      if (event.key === "Escape") setIsSettingOpen(false);
     }
-  }, [userAgent]);
-
-  const initUserAgent = () => {
-    const socket = new JSSIP.WebSocketInterface("wss://sip.example.com");
-    const configuration = {
-      sockets: [socket],
-      uri: "sip:alice@example.com",
-      ha1: "350fe29ce3890bd85d105998b0a95cf7",
-      realm: "sip.example.com",
+    document.addEventListener("keydown", handleEscapeKey);
+    return () => {
+      document.removeEventListener("keydown", handleEscapeKey);
     };
-
-    const ua = new JSSIP.UA(configuration);
-    setUserAgent(ua);
-  };
-
+  }, []);
   return (
-    <main className="flex flex-1 justify-center gap-2 items-center h-screen">
-      <div>
-        <button onClick={initUserAgent}>Init UserAgent</button>
-        {/*<button onClick={increasePopulation}>Increase Population</button>*/}
-      </div>
-      <div>
-        {/*<button onClick={decreasePopulation}>Decrease Population</button>*/}
-      </div>
+    <main className="flex flex-row h-screen bg-gray-100">
+      <Sidebar>
+        <div className="flex flex-col gap-2 w-full">
+          <LocalVideo />
+          {/*<ProfileList />*/}
+          <ConnectSip
+            status={status}
+            handleRegister={handleRegister}
+            handleUnRegister={handleUnRegister}
+          />
+          <StatusConnection />
+          <CallOut />
+          {/*<Box />*/}
+        </div>
+      </Sidebar>
+      <MainView>Hello</MainView>
     </main>
   );
 }
